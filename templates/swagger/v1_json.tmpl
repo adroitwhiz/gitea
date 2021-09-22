@@ -2134,6 +2134,23 @@
         }
       }
     },
+    "/repos/{owner}/repo/git/blobs": {
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "repository"
+        ],
+        "summary": "Uploads a blob to a repository.",
+        "operationId": "WriteBlob",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/GitWriteBlobResponse"
+          }
+        }
+      }
+    },
     "/repos/{owner}/{repo}": {
       "get": {
         "produces": [
@@ -14972,6 +14989,21 @@
       },
       "x-go-package": "code.gitea.io/gitea/modules/structs"
     },
+    "GitWriteBlobResponse": {
+      "description": "GitWriteBlobResponse represents the result of writing a git blob",
+      "type": "object",
+      "properties": {
+        "sha": {
+          "type": "string",
+          "x-go-name": "SHA"
+        },
+        "url": {
+          "type": "string",
+          "x-go-name": "URL"
+        }
+      },
+      "x-go-package": "code.gitea.io/gitea/modules/structs"
+    },
     "Hook": {
       "description": "Hook a hook is a web hook when one repository changed",
       "type": "object",
@@ -17434,6 +17466,12 @@
       "description": "GitTreeResponse",
       "schema": {
         "$ref": "#/definitions/GitTreeResponse"
+      }
+    },
+    "GitWriteBlobResponse": {
+      "description": "GitWriteBlobResponse",
+      "schema": {
+        "$ref": "#/definitions/GitWriteBlobResponse"
       }
     },
     "Hook": {

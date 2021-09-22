@@ -5,6 +5,8 @@
 package repofiles
 
 import (
+	"io"
+
 	"code.gitea.io/gitea/models"
 	"code.gitea.io/gitea/modules/git"
 	"code.gitea.io/gitea/modules/setting"
@@ -35,5 +37,21 @@ func GetBlobBySHA(repo *models.Repository, sha string) (*api.GitBlobResponse, er
 		Size:     gitBlob.Size(),
 		Encoding: "base64",
 		Content:  content,
+	}, nil
+}
+
+func WriteBlob(repo *models.Repository, blob io.Reader) (*api.GitWriteBlobResponse, error) {
+	gitRepo, err := git.OpenRepository(repo.RepoPath())
+	if err != nil {
+		return nil, err
+	}
+	defer gitRepo.Close()
+	blobHash, err := gitRepo.HashObject(blob)
+	if err != nil {
+		return nil, err
+	}
+	return &api.GitWriteBlobResponse{
+		SHA: blobHash.String(),
+		URL: repo.APIURL() + "/git/blobs/" + blobHash.String(),
 	}, nil
 }

@@ -225,6 +225,13 @@ type swaggerGitBlobResponse struct {
 	Body api.GitBlobResponse `json:"body"`
 }
 
+// GitWriteBlobResponse
+// swagger:response GitWriteBlobResponse
+type swaggerGitWriteBlobResponse struct {
+	// in: body
+	Body api.GitWriteBlobResponse `json:"body"`
+}
+
 // Commit
 // swagger:response Commit
 type swaggerCommit struct {

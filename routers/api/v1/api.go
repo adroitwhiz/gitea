@@ -941,7 +941,10 @@ func Routes(sessioner func(http.Handler) http.Handler) *web.Route {
 					m.Get("/refs", repo.GetGitAllRefs)
 					m.Get("/refs/*", repo.GetGitRefs)
 					m.Get("/trees/{sha}", context.RepoRefForAPI, repo.GetTree)
-					m.Get("/blobs/{sha}", context.RepoRefForAPI, repo.GetBlob)
+					m.Group("/blobs", func() {
+						m.Get("/{sha}", context.RepoRefForAPI, repo.GetBlob)
+						m.Post("", reqRepoWriter(models.UnitTypeCode), context.RepoRefForAPI, repo.WriteBlob)
+					})
 					m.Get("/tags/{sha}", context.RepoRefForAPI, repo.GetAnnotatedTag)
 					m.Get("/notes/{sha}", repo.GetNote)
 				}, reqRepoReader(models.UnitTypeCode))

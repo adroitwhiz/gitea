@@ -5,7 +5,9 @@
 package integrations
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"code.gitea.io/gitea/models"
@@ -73,5 +75,21 @@ func TestAPIReposGitBlobs(t *testing.T) {
 
 	// Test using org repo "user3/repo3" where user4 is a NOT collaborator
 	req = NewRequestf(t, "GET", "/api/v1/repos/%s/%s/git/blobs/d56a3073c1dbb7b15963110a049d50cdb5db99fc?access=%s", user3.Name, repo3.Name, token4)
+	session.MakeRequest(t, req, http.StatusNotFound)
+
+	// Test writing blob as user with write access
+	req = NewRequestWithBody(t, "POST", fmt.Sprintf("/api/v1/repos/%s/%s/git/blobs?token=%s", user3.Name, repo3.Name, token), strings.NewReader("test blob contents"))
+	resp = session.MakeRequest(t, req, http.StatusOK)
+	var gitWriteBlobResponse api.GitWriteBlobResponse
+	DecodeJSON(t, resp, &gitWriteBlobResponse)
+	assert.NotNil(t, gitWriteBlobResponse)
+	assert.Equal(t, "067454a8b699028bacad1b6082b2ac9f782ed935", gitWriteBlobResponse.SHA)
+
+	// Test writing blob as user without write access
+	req = NewRequestWithBody(t, "POST", fmt.Sprintf("/api/v1/repos/%s/%s/git/blobs?token=%s", user2.Name, repo1.Name, token4), strings.NewReader("test blob contents"))
+	session.MakeRequest(t, req, http.StatusForbidden)
+
+	// Test writing blob to private repo
+	req = NewRequestf(t, "POST", "/api/v1/repos/%s/%s/git/blobs", user2.Name, repo16.Name)
 	session.MakeRequest(t, req, http.StatusNotFound)
 }

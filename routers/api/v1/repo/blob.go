@@ -5,10 +5,12 @@
 package repo
 
 import (
+	"fmt"
 	"net/http"
 
 	"code.gitea.io/gitea/modules/context"
 	"code.gitea.io/gitea/modules/repofiles"
+	"code.gitea.io/gitea/modules/setting"
 )
 
 // GetBlob get the blob of a repository file.
@@ -46,6 +48,38 @@ func GetBlob(ctx *context.APIContext) {
 		return
 	}
 	if blob, err := repofiles.GetBlobBySHA(ctx.Repo.Repository, sha); err != nil {
+		ctx.Error(http.StatusBadRequest, "", err)
+	} else {
+		ctx.JSON(http.StatusOK, blob)
+	}
+}
+
+func WriteBlob(ctx *context.APIContext) {
+	// swagger:operation POST /repos/{owner}/repo/git/blobs repository WriteBlob
+	// ---
+	// summary: Uploads a blob to a repository.
+	// produces:
+	// - application/json
+	// requestBody:
+	//   description: The contents of the blob.
+	//   required: true
+	// responses:
+	//   "200":
+	//     "$ref": "#/responses/GitWriteBlobResponse"
+	//   "4XX":
+	//     "$ref": "#/responses/error"
+
+	r := ctx.Repo
+	if r.Repository.IsMirror || r.Repository.IsArchived {
+		ctx.Error(http.StatusForbidden, "Repository is archived or a mirror", nil)
+		return
+	}
+
+	defer ctx.Req.Body.Close()
+	if ctx.Req.ContentLength > setting.API.DefaultMaxBlobSize {
+		ctx.Error(http.StatusRequestEntityTooLarge, fmt.Sprintf("Blob must be at most %d bytes in size", setting.API.DefaultMaxBlobSize), nil)
+	}
+	if blob, err := repofiles.WriteBlob(ctx.Repo.Repository, ctx.Req.Body); err != nil {
 		ctx.Error(http.StatusBadRequest, "", err)
 	} else {
 		ctx.JSON(http.StatusOK, blob)

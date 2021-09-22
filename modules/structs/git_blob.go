@@ -12,3 +12,9 @@ type GitBlobResponse struct {
 	SHA      string `json:"sha"`
 	Size     int64  `json:"size"`
 }
+
+// GitWriteBlobResponse represents the result of writing a git blob
+type GitWriteBlobResponse struct {
+	URL string `json:"url"`
+	SHA string `json:"sha"`
+}
