@@ -70,6 +70,7 @@ func (t *Tree) ListEntriesRecursive() (Entries, error) {
 	var entries []*TreeEntry
 	seen := map[plumbing.Hash]bool{}
 	walker := object.NewTreeWalker(t.gogitTree, true, seen)
+	defer walker.Close()
 	for {
 		fullName, entry, err := walker.Next()
 		if err == io.EOF {
