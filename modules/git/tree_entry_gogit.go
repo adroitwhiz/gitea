@@ -26,6 +26,18 @@ type TreeEntry struct {
 	fullName string
 }
 
+// CreateTreeEntry creates a new tree entry object
+func CreateTreeEntry(id SHA1, name string, mode EntryMode) TreeEntry {
+	return TreeEntry{
+		ID: id,
+		gogitTreeEntry: &object.TreeEntry{
+			Name: name,
+			Mode: filemode.FileMode(mode),
+			Hash: id,
+		},
+	}
+}
+
 // Name returns the name of the entry
 func (te *TreeEntry) Name() string {
 	if te.fullName != "" {
@@ -41,9 +53,11 @@ func (te *TreeEntry) Mode() EntryMode {
 
 // Size returns the size of the entry
 func (te *TreeEntry) Size() int64 {
-	if te.IsDir() {
+	if te.IsDir() || te.ptree == nil {
 		return 0
-	} else if te.sized {
+	}
+
+	if te.sized {
 		return te.size
 	}
 
@@ -82,8 +96,11 @@ func (te *TreeEntry) IsExecutable() bool {
 	return te.gogitTreeEntry.Mode == filemode.Executable
 }
 
-// Blob returns the blob object the entry
+// Blob returns the blob object corresponding to the entry, or nil if there is an error fetching it (e.g. it doesn't exist in the repo)
 func (te *TreeEntry) Blob() *Blob {
+	if te.ptree == nil {
+		return nil
+	}
 	encodedObj, err := te.ptree.repo.gogitRepo.Storer.EncodedObject(plumbing.AnyObject, te.gogitTreeEntry.Hash)
 	if err != nil {
 		return nil

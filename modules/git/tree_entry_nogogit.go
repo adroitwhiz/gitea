@@ -26,6 +26,15 @@ type TreeEntry struct {
 	fullName string
 }
 
+// CreateTreeEntry creates a new tree entry object
+func CreateTreeEntry(id SHA1, name string, mode EntryMode) TreeEntry {
+	return TreeEntry{
+		ID:        id,
+		entryMode: mode,
+		name:      name,
+	}
+}
+
 // Name returns the name of the entry
 func (te *TreeEntry) Name() string {
 	if te.fullName != "" {
@@ -41,9 +50,11 @@ func (te *TreeEntry) Mode() EntryMode {
 
 // Size returns the size of the entry
 func (te *TreeEntry) Size() int64 {
-	if te.IsDir() {
+	if te.IsDir() || te.ptree == nil {
 		return 0
-	} else if te.sized {
+	}
+
+	if te.sized {
 		return te.size
 	}
 
@@ -84,11 +95,15 @@ func (te *TreeEntry) IsExecutable() bool {
 
 // Blob returns the blob object the entry
 func (te *TreeEntry) Blob() *Blob {
+	var repo *Repository
+	if te.ptree != nil {
+		repo = te.ptree.repo
+	}
 	return &Blob{
 		ID:      te.ID,
 		name:    te.Name(),
 		size:    te.size,
 		gotSize: te.sized,
-		repo:    te.ptree.repo,
+		repo:    repo,
 	}
 }

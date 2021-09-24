@@ -104,7 +104,7 @@ func (te *TreeEntry) FollowLinks() (*TreeEntry, error) {
 
 // GetSubJumpablePathName return the full path of subdirectory jumpable ( contains only one directory )
 func (te *TreeEntry) GetSubJumpablePathName() string {
-	if te.IsSubModule() || !te.IsDir() {
+	if te.IsSubModule() || !te.IsDir() || te.ptree == nil {
 		return ""
 	}
 	tree, err := te.ptree.SubTree(te.Name())
