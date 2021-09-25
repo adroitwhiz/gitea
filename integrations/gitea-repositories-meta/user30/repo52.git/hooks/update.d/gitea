@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+/mnt/c/Users/winklerm1/Documents/gitea/gitea hook --config=/mnt/c/Users/winklerm1/Documents/gitea/custom/conf/app.ini update $1 $2 $3

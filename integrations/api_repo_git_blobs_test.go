@@ -22,9 +22,12 @@ func TestAPIReposGitBlobs(t *testing.T) {
 	user2 := db.AssertExistsAndLoadBean(t, &models.User{ID: 2}).(*models.User)               // owner of the repo1 & repo16
 	user3 := db.AssertExistsAndLoadBean(t, &models.User{ID: 3}).(*models.User)               // owner of the repo3
 	user4 := db.AssertExistsAndLoadBean(t, &models.User{ID: 4}).(*models.User)               // owner of neither repos
+	user30 := db.AssertExistsAndLoadBean(t, &models.User{ID: 30}).(*models.User)             // owner of archived repo
 	repo1 := db.AssertExistsAndLoadBean(t, &models.Repository{ID: 1}).(*models.Repository)   // public repo
 	repo3 := db.AssertExistsAndLoadBean(t, &models.Repository{ID: 3}).(*models.Repository)   // public repo
 	repo16 := db.AssertExistsAndLoadBean(t, &models.Repository{ID: 16}).(*models.Repository) // private repo
+	repo51 := db.AssertExistsAndLoadBean(t, &models.Repository{ID: 51}).(*models.Repository) // archived repo
+	repo52 := db.AssertExistsAndLoadBean(t, &models.Repository{ID: 52}).(*models.Repository) // mirror repo
 	repo1ReadmeSHA := "65f1bf27bc3bf70f64657658635e66094edbcb4d"
 	repo3ReadmeSHA := "d56a3073c1dbb7b15963110a049d50cdb5db99fc"
 	repo16ReadmeSHA := "f90451c72ef61a7645293d17b47be7a8e983da57"
@@ -71,7 +74,7 @@ func TestAPIReposGitBlobs(t *testing.T) {
 	// Login as User4.
 	session = loginUser(t, user4.Name)
 	token4 := getTokenForLoggedInUser(t, session)
-	session = emptyTestSession(t) // don't want anyone logged in for this
+	session = emptyTestSession(t)
 
 	// Test using org repo "user3/repo3" where user4 is a NOT collaborator
 	req = NewRequestf(t, "GET", "/api/v1/repos/%s/%s/git/blobs/d56a3073c1dbb7b15963110a049d50cdb5db99fc?access=%s", user3.Name, repo3.Name, token4)
@@ -92,4 +95,17 @@ func TestAPIReposGitBlobs(t *testing.T) {
 	// Test writing blob to private repo
 	req = NewRequestf(t, "POST", "/api/v1/repos/%s/%s/git/blobs", user2.Name, repo16.Name)
 	session.MakeRequest(t, req, http.StatusNotFound)
+
+	// Login as User30.
+	session = loginUser(t, user30.Name)
+	token30 := getTokenForLoggedInUser(t, session)
+	session = emptyTestSession(t)
+
+	// Test writing blob to mirror repo
+	req = NewRequestWithBody(t, "POST", fmt.Sprintf("/api/v1/repos/%s/%s/git/blobs?token=%s", user30.Name, repo52.Name, token30), strings.NewReader("test blob contents"))
+	session.MakeRequest(t, req, http.StatusForbidden)
+
+	// Test writing blob to archived repo
+	req = NewRequestWithBody(t, "POST", fmt.Sprintf("/api/v1/repos/%s/%s/git/blobs?token=%s", user30.Name, repo51.Name, token30), strings.NewReader("test blob contents"))
+	session.MakeRequest(t, req, http.StatusForbidden)
 }

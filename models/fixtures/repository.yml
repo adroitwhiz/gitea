@@ -736,3 +736,24 @@
   num_projects: 0
   num_closed_projects: 0
   status: 0
+
+-
+  id: 52
+  owner_id: 30
+  owner_name: user30
+  lower_name: repo52
+  name: repo52
+  is_archived: false
+  is_empty: false
+  is_private: false
+  is_mirror: true
+  num_issues: 0
+  num_closed_issues: 0
+  num_pulls: 0
+  num_closed_pulls: 0
+  num_milestones: 0
+  num_closed_milestones: 0
+  num_watches: 0
+  num_projects: 0
+  num_closed_projects: 0
+  status: 0

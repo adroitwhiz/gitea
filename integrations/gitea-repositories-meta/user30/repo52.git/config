@@ -1,0 +1,9 @@
+[core]
+	repositoryformatversion = 0
+	filemode = false
+	bare = true
+	ignorecase = true
+[remote "origin"]
+	url = https://example.com/repo5.git
+	fetch = +refs/*:refs/*
+	mirror = true
