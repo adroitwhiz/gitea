@@ -4,7 +4,10 @@
 
 package git
 
-import "strconv"
+import (
+	"fmt"
+	"strconv"
+)
 
 // EntryMode the type of the object in the git tree
 type EntryMode int
@@ -30,7 +33,20 @@ func (e EntryMode) String() string {
 }
 
 // ToEntryMode converts a string to an EntryMode
-func ToEntryMode(value string) EntryMode {
-	v, _ := strconv.ParseInt(value, 8, 32)
-	return EntryMode(v)
+func ToEntryMode(value string) (EntryMode, error) {
+	v, err := strconv.ParseInt(value, 8, 32)
+	if err != nil {
+		return 0, err
+	}
+	switch EntryMode(v) {
+	case EntryModeBlob:
+	case EntryModeExec:
+	case EntryModeSymlink:
+	case EntryModeCommit:
+	case EntryModeTree:
+		break
+	default:
+		return 0, fmt.Errorf("invalid git entry mode %s", value)
+	}
+	return EntryMode(v), nil
 }
