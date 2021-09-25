@@ -47,7 +47,7 @@ func GetContentsOrList(repo *models.Repository, treePath, ref string) (interface
 	origRef := ref
 
 	// Check that the path given in opts.treePath is valid (not a git path)
-	cleanTreePath := CleanUploadFileName(treePath)
+	cleanTreePath := CleanUploadFilePath(treePath)
 	if cleanTreePath == "" && treePath != "" {
 		return nil, models.ErrFilenameInvalid{
 			Path: treePath,
@@ -106,7 +106,7 @@ func GetContents(repo *models.Repository, treePath, ref string, forList bool) (*
 	origRef := ref
 
 	// Check that the path given in opts.treePath is valid (not a git path)
-	cleanTreePath := CleanUploadFileName(treePath)
+	cleanTreePath := CleanUploadFilePath(treePath)
 	if cleanTreePath == "" && treePath != "" {
 		return nil, models.ErrFilenameInvalid{
 			Path: treePath,

@@ -158,14 +158,14 @@ func CreateOrUpdateRepoFile(repo *models.Repository, doer *models.User, opts *Up
 	}
 
 	// Check that the path given in opts.treePath is valid (not a git path)
-	treePath := CleanUploadFileName(opts.TreePath)
+	treePath := CleanUploadFilePath(opts.TreePath)
 	if treePath == "" {
 		return nil, models.ErrFilenameInvalid{
 			Path: opts.TreePath,
 		}
 	}
 	// If there is a fromTreePath (we are copying it), also clean it up
-	fromTreePath := CleanUploadFileName(opts.FromTreePath)
+	fromTreePath := CleanUploadFilePath(opts.FromTreePath)
 	if fromTreePath == "" && opts.FromTreePath != "" {
 		return nil, models.ErrFilenameInvalid{
 			Path: opts.FromTreePath,

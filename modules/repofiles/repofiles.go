@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-// CleanUploadFileName Trims a filename and returns empty string if it is a .git directory
-func CleanUploadFileName(name string) string {
+// CleanUploadFilePath Trims a file path and returns empty string if it is a .git directory
+func CleanUploadFilePath(name string) string {
 	// Rebase the filename
 	name = strings.Trim(path.Clean("/"+name), " /")
 	// Git disallows any filenames to have a .git directory in them.

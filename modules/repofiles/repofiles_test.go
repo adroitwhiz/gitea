@@ -10,17 +10,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCleanUploadFileName(t *testing.T) {
+func TestCleanUploadFilePath(t *testing.T) {
 	t.Run("Clean regular file", func(t *testing.T) {
 		name := "this/is/test"
-		cleanName := CleanUploadFileName(name)
+		cleanName := CleanUploadFilePath(name)
 		expectedCleanName := name
 		assert.EqualValues(t, expectedCleanName, cleanName)
 	})
 
 	t.Run("Clean a .git path", func(t *testing.T) {
 		name := "this/is/test/.git"
-		cleanName := CleanUploadFileName(name)
+		cleanName := CleanUploadFilePath(name)
 		expectedCleanName := ""
 		assert.EqualValues(t, expectedCleanName, cleanName)
 	})

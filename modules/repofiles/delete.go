@@ -61,7 +61,7 @@ func DeleteRepoFile(repo *models.Repository, doer *models.User, opts *DeleteRepo
 	}
 
 	// Check that the path given in opts.treeName is valid (not a git path)
-	treePath := CleanUploadFileName(opts.TreePath)
+	treePath := CleanUploadFilePath(opts.TreePath)
 	if treePath == "" {
 		return nil, models.ErrFilenameInvalid{
 			Path: opts.TreePath,
