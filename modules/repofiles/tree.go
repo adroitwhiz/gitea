@@ -5,6 +5,9 @@
 package repofiles
 
 import (
+	"bytes"
+	"encoding/base64"
+	"errors"
 	"fmt"
 
 	"code.gitea.io/gitea/models"
@@ -94,4 +97,105 @@ func GetTreeBySHA(repo *models.Repository, sha string, page, perPage int, recurs
 		}
 	}
 	return tree, nil
+}
+
+func WriteTree(repo *models.Repository, tree []*api.GitWriteTreeEntry, baseTreeSha string) (*api.GitWriteTreeResponse, error) {
+	gitRepo, err := git.OpenRepository(repo.RepoPath())
+	if err != nil {
+		return nil, err
+	}
+	defer gitRepo.Close()
+
+	// Initialize a map of tree entries.
+	// This is so that we can overwrite and remove entries from the "base tree" if given.
+	// This also prevents multiple entries with the same name from being placed into a tree,
+	// which is a thing that can apparently happen but is not documented anywhere (ls-tree
+	// reads back the tree as having multiple entries with the same file name but different
+	// hashes, and checking out the tree seems to choose one arbitrarily).
+	treeEntries := make(map[string]*git.TreeEntry)
+
+	// Add entries from base tree if present
+	if baseTreeSha != "" {
+		baseTree, err := gitRepo.GetTree(baseTreeSha)
+		if err != nil || baseTree == nil {
+			return nil, models.ErrSHANotFound{
+				SHA: baseTreeSha,
+			}
+		}
+
+		entries, err := baseTree.ListEntries()
+		if err != nil {
+			return nil, err
+		}
+
+		for _, e := range entries {
+			treeEntries[e.Name()] = e
+		}
+	}
+
+	for _, e := range tree {
+		if !ValidateUploadFileName(e.Name) {
+			return nil, fmt.Errorf("invalid file name %s", e.Name)
+		}
+		mode, err := git.ToEntryMode(e.Mode)
+		if err != nil {
+			return nil, err
+		}
+
+		if e.SHA == "" {
+			// SHA and content are null; delete the entry
+			if e.Content == "" {
+				delete(treeEntries, e.Name)
+				continue
+			}
+
+			if !(mode == git.EntryModeBlob || mode == git.EntryModeExec || mode == git.EntryModeSymlink) {
+				return nil, fmt.Errorf("file %s has content provided, but is not a blob, executable, or symlink", e.Name)
+			}
+
+			// Content was provided; store it
+			content, err := base64.StdEncoding.DecodeString(e.Content)
+			if err != nil {
+				return nil, err
+			}
+			sha, err := gitRepo.HashObject(bytes.NewReader(content))
+			if err != nil {
+				return nil, err
+			}
+			entry := git.CreateTreeEntry(sha, e.Name, mode)
+			treeEntries[entry.Name()] = &entry
+			continue
+		} else if e.Content != "" {
+			return nil, errors.New("both content and SHA provided")
+		}
+
+		sha, err := git.NewIDFromString(e.SHA)
+		if err != nil {
+			return nil, err
+		}
+
+		entry := git.CreateTreeEntry(sha, e.Name, mode)
+
+		treeEntries[entry.Name()] = &entry
+	}
+
+	entriesArr := make([]*git.TreeEntry, len(treeEntries))
+	i := 0
+	for _, e := range treeEntries {
+		entriesArr[i] = e
+		i++
+	}
+
+	sha, err := gitRepo.MkTree(entriesArr)
+	if err != nil {
+		if git.IsErrNotExist(err) {
+			return nil, models.ErrSHANotFound{SHA: err.(git.ErrNotExist).ID}
+		}
+		return nil, err
+	}
+	shaString := sha.String()
+	return &api.GitWriteTreeResponse{
+		SHA: shaString,
+		URL: repo.APIURL() + "/git/trees/" + shaString,
+	}, nil
 }

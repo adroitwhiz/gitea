@@ -25,7 +25,7 @@ func (err ErrExecTimeout) Error() string {
 	return fmt.Sprintf("execution is timeout [duration: %v]", err.Duration)
 }
 
-// ErrNotExist commit not exist error
+// ErrNotExist git object does not exist error
 type ErrNotExist struct {
 	ID      string
 	RelPath string

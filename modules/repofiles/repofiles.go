@@ -21,3 +21,8 @@ func CleanUploadFilePath(name string) string {
 	}
 	return name
 }
+
+// ValidateUploadFileName Ensures that a filename won't cause issues in Git (e.g. is a .git directory or contains invalid characters)
+func ValidateUploadFileName(name string) bool {
+	return !(name == ".git" || strings.Contains(name, "/"))
+}

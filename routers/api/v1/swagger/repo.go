@@ -218,6 +218,13 @@ type swaggerGitTreeResponse struct {
 	Body api.GitTreeResponse `json:"body"`
 }
 
+// GitWriteTreeResponse
+// swagger:response GitWriteTreeResponse
+type swaggerGitWriteTreeResponse struct {
+	// in: body
+	Body api.GitWriteTreeResponse `json:"body"`
+}
+
 // GitBlobResponse
 // swagger:response GitBlobResponse
 type swaggerGitBlobResponse struct {

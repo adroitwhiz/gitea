@@ -940,7 +940,10 @@ func Routes(sessioner func(http.Handler) http.Handler) *web.Route {
 					})
 					m.Get("/refs", repo.GetGitAllRefs)
 					m.Get("/refs/*", repo.GetGitRefs)
-					m.Get("/trees/{sha}", context.RepoRefForAPI, repo.GetTree)
+					m.Group("/trees", func() {
+						m.Get("/{sha}", context.RepoRefForAPI, repo.GetTree)
+						m.Post("", reqRepoWriter(models.UnitTypeCode), context.RepoRefForAPI, bind(api.GitWriteTreeOptions{}), repo.WriteTree)
+					})
 					m.Group("/blobs", func() {
 						m.Get("/{sha}", context.RepoRefForAPI, repo.GetBlob)
 						m.Post("", reqRepoWriter(models.UnitTypeCode), context.RepoRefForAPI, repo.WriteBlob)

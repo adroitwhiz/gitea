@@ -7,6 +7,7 @@ package git
 
 import (
 	"bytes"
+	"regexp"
 	"strings"
 )
 
@@ -65,4 +66,39 @@ func (repo *Repository) LsTree(ref string, filenames ...string) ([]string, error
 	}
 
 	return filelist, err
+}
+
+var objectUnavailable = regexp.MustCompile(`fatal: entry .* object ([0-9a-f]+) is unavailable`)
+
+// MkTree creates a new tree from tree entries
+func (repo *Repository) MkTree(entries []*TreeEntry) (SHA1, error) {
+	cmd := NewCommand("mktree", "-z")
+	stdout := new(bytes.Buffer)
+	stderr := new(bytes.Buffer)
+	buffer := new(bytes.Buffer)
+	for _, entry := range entries {
+		buffer.WriteString(entry.Mode().String())
+		buffer.WriteString(" ")
+		buffer.WriteString(entry.Type())
+		buffer.WriteString(" ")
+		buffer.WriteString(entry.ID.String())
+		buffer.WriteString("\t")
+		buffer.WriteString(entry.Name())
+		buffer.WriteByte('\000')
+	}
+
+	err := cmd.RunInDirFullPipeline(repo.Path, stdout, stderr, bytes.NewReader(buffer.Bytes()))
+	if err != nil {
+		errString := stderr.String()
+		if missingSha := objectUnavailable.FindStringSubmatch(errString); missingSha != nil {
+			return SHA1{}, ErrNotExist{ID: missingSha[0]}
+		}
+		return SHA1{}, ConcatenateError(err, errString)
+	}
+	sha, err := NewIDFromString(strings.TrimSpace(stdout.String()))
+	if err != nil {
+		return SHA1{}, err
+	}
+
+	return sha, nil
 }

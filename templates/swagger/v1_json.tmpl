@@ -3820,6 +3820,53 @@
         }
       }
     },
+    "/repos/{owner}/{repo}/git/trees": {
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "repository"
+        ],
+        "summary": "Writes a tree to a repository.",
+        "operationId": "WriteTree",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "owner of the repo",
+            "name": "owner",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "name of the repo",
+            "name": "repo",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GitWriteTreeOptions"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/GitWriteTreeResponse"
+          },
+          "400": {
+            "$ref": "#/responses/error"
+          },
+          "403": {
+            "$ref": "#/responses/error"
+          }
+        }
+      }
+    },
     "/repos/{owner}/{repo}/git/trees/{sha}": {
       "get": {
         "produces": [
@@ -14878,7 +14925,7 @@
       "x-go-package": "code.gitea.io/gitea/modules/structs"
     },
     "GitEntry": {
-      "description": "GitEntry represents a git tree",
+      "description": "GitEntry represents an existing git tree entry being returned",
       "type": "object",
       "properties": {
         "mode": {
@@ -14991,6 +15038,75 @@
     },
     "GitWriteBlobResponse": {
       "description": "GitWriteBlobResponse represents the result of writing a git blob",
+      "type": "object",
+      "properties": {
+        "sha": {
+          "type": "string",
+          "x-go-name": "SHA"
+        },
+        "url": {
+          "type": "string",
+          "x-go-name": "URL"
+        }
+      },
+      "x-go-package": "code.gitea.io/gitea/modules/structs"
+    },
+    "GitWriteTreeEntry": {
+      "description": "You can provide either the SHA hash of an existing object, the base64-encoded contents of a new file to be written, or neither to delete the file from the tree.",
+      "type": "object",
+      "title": "GitWriteTreeEntry represents a git tree entry to be written.",
+      "required": [
+        "name",
+        "mode"
+      ],
+      "properties": {
+        "content": {
+          "description": "The base64-encoded contents of the object. Provide either this or `sha`.",
+          "type": "string",
+          "x-go-name": "Content"
+        },
+        "mode": {
+          "description": "The file mode. This can be `100644` for a file, `100755` for an executable file, `120000` for a symlink,\n`160000` for a commit/submodule, or `040000` for a directory/child tree.",
+          "type": "string",
+          "x-go-name": "Mode"
+        },
+        "name": {
+          "description": "The object's name.",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "sha": {
+          "description": "The SHA-1 hash of the referenced object. Provide either this or `content`.",
+          "type": "string",
+          "x-go-name": "SHA"
+        }
+      },
+      "x-go-package": "code.gitea.io/gitea/modules/structs"
+    },
+    "GitWriteTreeOptions": {
+      "type": "object",
+      "title": "GitWriteTreeOptions represents a request to write a git tree entry.",
+      "required": [
+        "tree"
+      ],
+      "properties": {
+        "base_tree": {
+          "description": "The SHA hash of an existing tree. If provided, this tree's entries will be merged with it, overwriting or deleting entries from it.",
+          "type": "string",
+          "x-go-name": "BaseTree"
+        },
+        "tree": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GitWriteTreeEntry"
+          },
+          "x-go-name": "Tree"
+        }
+      },
+      "x-go-package": "code.gitea.io/gitea/modules/structs"
+    },
+    "GitWriteTreeResponse": {
+      "description": "GitWriteTreeResponse is returned when a git tree is written",
       "type": "object",
       "properties": {
         "sha": {
@@ -17472,6 +17588,12 @@
       "description": "GitWriteBlobResponse",
       "schema": {
         "$ref": "#/definitions/GitWriteBlobResponse"
+      }
+    },
+    "GitWriteTreeResponse": {
+      "description": "GitWriteTreeResponse",
+      "schema": {
+        "$ref": "#/definitions/GitWriteTreeResponse"
       }
     },
     "Hook": {

@@ -123,6 +123,12 @@ type swaggerParameterBodies struct {
 	DeleteFileOptions api.DeleteFileOptions
 
 	// in:body
+	GitWriteTreeOptions api.GitWriteTreeOptions
+
+	// in:body
+	GitWriteTreeEntry api.GitWriteTreeEntry
+
+	// in:body
 	CommitDateOptions api.CommitDateOptions
 
 	// in:body
