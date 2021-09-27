@@ -388,12 +388,8 @@ func CreateOrUpdateRepoFile(repo *models.Repository, doer *models.User, opts *Up
 	}
 
 	// Now commit the tree
-	var commitHash string
-	if opts.Dates != nil {
-		commitHash, err = t.CommitTreeWithDate(author, committer, treeHash, message, opts.Signoff, opts.Dates.Author, opts.Dates.Committer)
-	} else {
-		commitHash, err = t.CommitTree(author, committer, treeHash, message, opts.Signoff)
-	}
+	// Dates is optional in CommitTreeOptions so it's okay to pass in without a nil check; it's done for us
+	commitHash, err := CommitTree(t.repo, t.gitRepo, author, committer, treeHash, message, opts.Signoff, CommitTreeOptions{Dates: opts.Dates})
 	if err != nil {
 		return nil, err
 	}

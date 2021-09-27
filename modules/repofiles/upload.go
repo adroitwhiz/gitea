@@ -115,7 +115,7 @@ func UploadRepoFiles(repo *models.Repository, doer *models.User, opts *UploadRep
 	committer := doer
 
 	// Now commit the tree
-	commitHash, err := t.CommitTree(author, committer, treeHash, opts.Message, opts.Signoff)
+	commitHash, err := CommitTree(t.repo, t.gitRepo, author, committer, treeHash, opts.Message, opts.Signoff, CommitTreeOptions{})
 	if err != nil {
 		return err
 	}

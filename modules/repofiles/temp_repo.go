@@ -184,68 +184,6 @@ func (t *TemporaryUploadRepository) GetLastCommitByRef(ref string) (string, erro
 	return strings.TrimSpace(stdout), nil
 }
 
-// CommitTree creates a commit from a given tree for the user with provided message
-func (t *TemporaryUploadRepository) CommitTree(author, committer *models.User, treeHash string, message string, signoff bool) (string, error) {
-	return t.CommitTreeWithDate(author, committer, treeHash, message, signoff, time.Now(), time.Now())
-}
-
-// CommitTreeWithDate creates a commit from a given tree for the user with provided message
-func (t *TemporaryUploadRepository) CommitTreeWithDate(author, committer *models.User, treeHash string, message string, signoff bool, authorDate, committerDate time.Time) (string, error) {
-	authorSig := author.NewGitSig()
-	committerSig := committer.NewGitSig()
-
-	err := git.LoadGitVersion()
-	if err != nil {
-		return "", fmt.Errorf("unable to get git version: %v", err)
-	}
-
-	treeID, err := git.NewIDFromString(treeHash)
-	if err != nil {
-		return "", err
-	}
-
-	opts := git.CommitTreeOpts{
-		Parents:       []string{"HEAD"},
-		Message:       message,
-		Trailers:      make(map[string]string),
-		AuthorDate:    authorDate,
-		CommitterDate: committerDate,
-	}
-
-	// Determine if we should sign
-	if git.CheckGitVersionAtLeast("1.7.9") == nil {
-		sign, keyID, signer, _ := t.repo.SignCRUDAction(author, t.basePath, []string{"HEAD"})
-		if sign {
-			opts.KeyID = keyID
-			opts.NoGPGSign = false
-			opts.AlwaysSign = true
-			if t.repo.GetTrustModel() == models.CommitterTrustModel || t.repo.GetTrustModel() == models.CollaboratorCommitterTrustModel {
-				if committerSig.Name != authorSig.Name || committerSig.Email != authorSig.Email {
-					// Add trailers
-					opts.Trailers["Co-authored-by"] = committerSig.String()
-					opts.Trailers["Co-committed-by"] = committerSig.String()
-				}
-				committerSig = signer
-			}
-		} else if git.CheckGitVersionAtLeast("2.0.0") == nil {
-			opts.NoGPGSign = true
-		}
-	}
-
-	if signoff {
-		// Signed-off-by
-		opts.Trailers["Signed-off-by"] = committerSig.String()
-	}
-
-	commitID, err := t.gitRepo.CommitTree(authorSig, committerSig, treeID, opts)
-	if err != nil {
-		log.Error("Unable to commit-tree in temporary repo: %s (%s) Error: %v",
-			t.repo.FullName(), t.basePath, err)
-		return "", err
-	}
-	return commitID.String(), nil
-}
-
 // Push the provided commitHash to the repository branch by the provided user
 func (t *TemporaryUploadRepository) Push(doer *models.User, commitHash string, branch string) error {
 	// Because calls hooks we need to pass in the environment
