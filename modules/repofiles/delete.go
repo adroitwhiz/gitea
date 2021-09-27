@@ -170,7 +170,7 @@ func DeleteRepoFile(repo *models.Repository, doer *models.User, opts *DeleteRepo
 
 	// Now commit the tree
 	// Dates is optional in CommitTreeOptions so it's okay to pass in without a nil check; it's done for us
-	commitHash, err := CommitTree(t.repo, t.gitRepo, author, committer, treeHash, message, opts.Signoff, CommitTreeOptions{Dates: opts.Dates})
+	commitHash, verification, err := CommitTree(t.repo, t.gitRepo, author, committer, treeHash, message, opts.Signoff, CommitTreeOptions{Dates: opts.Dates})
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ func DeleteRepoFile(repo *models.Repository, doer *models.User, opts *DeleteRepo
 		return nil, err
 	}
 
-	file, err := GetFileResponseFromCommit(repo, commit, opts.NewBranch, treePath)
+	file, err := GetFileResponseFromCommit(repo, commit, verification, opts.NewBranch, treePath)
 	if err != nil {
 		return nil, err
 	}

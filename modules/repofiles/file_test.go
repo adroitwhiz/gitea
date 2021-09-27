@@ -97,8 +97,9 @@ func TestGetFileResponseFromCommit(t *testing.T) {
 	defer gitRepo.Close()
 	commit, _ := gitRepo.GetBranchCommit(branch)
 	expectedFileResponse := getExpectedFileResponse()
+	verification := GetPayloadCommitVerification(commit)
 
-	fileResponse, err := GetFileResponseFromCommit(repo, commit, branch, treePath)
+	fileResponse, err := GetFileResponseFromCommit(repo, commit, verification, branch, treePath)
 	assert.NoError(t, err)
 	assert.EqualValues(t, expectedFileResponse, fileResponse)
 }

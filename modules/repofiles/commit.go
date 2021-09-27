@@ -12,6 +12,7 @@ import (
 	"code.gitea.io/gitea/models"
 	"code.gitea.io/gitea/modules/git"
 	"code.gitea.io/gitea/modules/log"
+	"code.gitea.io/gitea/modules/structs"
 )
 
 // IdentityOptions for a person's identity like an author or committer
@@ -44,7 +45,7 @@ func CountDivergingCommits(repo *models.Repository, branch string) (*git.Diverge
 // CommitTree creates a commit from a given tree for the user with provided message.
 // The Git repository and repository model passed need not be the same repository
 // (for instance, a temporary upload repository has its own temporary Git repository.)
-func CommitTree(repo *models.Repository, gitRepo *git.Repository, author, committer *models.User, treeHash string, message string, signoff bool, opts CommitTreeOptions) (string, error) {
+func CommitTree(repo *models.Repository, gitRepo *git.Repository, author, committer *models.User, treeHash string, message string, signoff bool, opts CommitTreeOptions) (string, *structs.PayloadCommitVerification, error) {
 	// Initialize default parent. Dates will be set in git.CommitTree if not provided here.
 	if len(opts.Parents) == 0 {
 		opts.Parents = append(opts.Parents, "HEAD")
@@ -55,12 +56,12 @@ func CommitTree(repo *models.Repository, gitRepo *git.Repository, author, commit
 
 	err := git.LoadGitVersion()
 	if err != nil {
-		return "", fmt.Errorf("unable to get git version: %v", err)
+		return "", nil, fmt.Errorf("unable to get git version: %v", err)
 	}
 
 	treeID, err := git.NewIDFromString(treeHash)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	gitOpts := git.CommitTreeOpts{
@@ -103,9 +104,18 @@ func CommitTree(repo *models.Repository, gitRepo *git.Repository, author, commit
 	if err != nil {
 		log.Error("Unable to commit-tree in temporary repo: %s (%s) Error: %v",
 			repo.FullName(), gitRepo.Path, err)
-		return "", err
+		return "", nil, err
 	}
-	return commitID.String(), nil
+	commitIDString := commitID.String()
+
+	commit, err := gitRepo.GetCommit(commitIDString)
+	if err != nil {
+		return "", nil, err
+	}
+
+	verification := GetPayloadCommitVerification(commit)
+
+	return commitIDString, verification, nil
 }
 
 // GetAuthorAndCommitterUsers Gets the author and committer user objects from the IdentityOptions
