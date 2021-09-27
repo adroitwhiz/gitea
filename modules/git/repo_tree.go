@@ -20,6 +20,7 @@ type CommitTreeOpts struct {
 	KeyID      string
 	NoGPGSign  bool
 	AlwaysSign bool
+	Trailers   map[string]string
 }
 
 // CommitTree creates a commit from a given tree id for the user with provided message
@@ -49,6 +50,16 @@ func (repo *Repository) CommitTree(author *Signature, committer *Signature, tree
 	messageBytes := new(bytes.Buffer)
 	_, _ = messageBytes.WriteString(opts.Message)
 	_, _ = messageBytes.WriteString("\n")
+
+	if len(opts.Trailers) > 0 {
+		_, _ = messageBytes.WriteString("\n")
+		for k, v := range opts.Trailers {
+			_, _ = messageBytes.WriteString(k)
+			_, _ = messageBytes.WriteString(": ")
+			_, _ = messageBytes.WriteString(v)
+			_, _ = messageBytes.WriteString("\n")
+		}
+	}
 
 	if CheckGitVersionAtLeast("1.7.9") == nil && (opts.KeyID != "" || opts.AlwaysSign) {
 		cmd.AddArguments(fmt.Sprintf("-S%s", opts.KeyID))
