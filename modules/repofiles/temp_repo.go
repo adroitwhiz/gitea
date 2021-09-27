@@ -205,9 +205,11 @@ func (t *TemporaryUploadRepository) CommitTreeWithDate(author, committer *models
 	}
 
 	opts := git.CommitTreeOpts{
-		Parents:  []string{"HEAD"},
-		Message:  message,
-		Trailers: make(map[string]string),
+		Parents:       []string{"HEAD"},
+		Message:       message,
+		Trailers:      make(map[string]string),
+		AuthorDate:    authorDate,
+		CommitterDate: committerDate,
 	}
 
 	// Determine if we should sign

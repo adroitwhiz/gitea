@@ -15,12 +15,14 @@ import (
 
 // CommitTreeOpts represents the possible options to CommitTree
 type CommitTreeOpts struct {
-	Parents    []string
-	Message    string
-	KeyID      string
-	NoGPGSign  bool
-	AlwaysSign bool
-	Trailers   map[string]string
+	Parents       []string
+	Message       string
+	KeyID         string
+	NoGPGSign     bool
+	AlwaysSign    bool
+	AuthorDate    time.Time
+	CommitterDate time.Time
+	Trailers      map[string]string
 }
 
 // CommitTree creates a commit from a given tree id for the user with provided message
@@ -30,16 +32,21 @@ func (repo *Repository) CommitTree(author *Signature, committer *Signature, tree
 		return SHA1{}, err
 	}
 
-	commitTimeStr := time.Now().Format(time.RFC3339)
+	if opts.AuthorDate.IsZero() {
+		opts.AuthorDate = time.Now()
+	}
+	if opts.CommitterDate.IsZero() {
+		opts.CommitterDate = time.Now()
+	}
 
 	// Because this may call hooks we should pass in the environment
 	env := append(os.Environ(),
 		"GIT_AUTHOR_NAME="+author.Name,
 		"GIT_AUTHOR_EMAIL="+author.Email,
-		"GIT_AUTHOR_DATE="+commitTimeStr,
+		"GIT_AUTHOR_DATE="+opts.AuthorDate.Format(time.RFC3339),
 		"GIT_COMMITTER_NAME="+committer.Name,
 		"GIT_COMMITTER_EMAIL="+committer.Email,
-		"GIT_COMMITTER_DATE="+commitTimeStr,
+		"GIT_COMMITTER_DATE="+opts.CommitterDate.Format(time.RFC3339),
 	)
 	cmd := NewCommand("commit-tree", treeID.String())
 
