@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"path"
 	"strings"
-	"time"
 
 	"code.gitea.io/gitea/models"
 	"code.gitea.io/gitea/modules/charset"
@@ -23,18 +22,6 @@ import (
 	stdcharset "golang.org/x/net/html/charset"
 	"golang.org/x/text/transform"
 )
-
-// IdentityOptions for a person's identity like an author or committer
-type IdentityOptions struct {
-	Name  string
-	Email string
-}
-
-// CommitDateOptions store dates for GIT_AUTHOR_DATE and GIT_COMMITTER_DATE
-type CommitDateOptions struct {
-	Author    time.Time
-	Committer time.Time
-}
 
 // UpdateRepoFileOptions holds the repository file update options
 type UpdateRepoFileOptions struct {
