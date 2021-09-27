@@ -196,67 +196,52 @@ func (t *TemporaryUploadRepository) CommitTreeWithDate(author, committer *models
 
 	err := git.LoadGitVersion()
 	if err != nil {
-		return "", fmt.Errorf("Unable to get git version: %v", err)
+		return "", fmt.Errorf("unable to get git version: %v", err)
 	}
 
-	// Because this may call hooks we should pass in the environment
-	env := append(os.Environ(),
-		"GIT_AUTHOR_NAME="+authorSig.Name,
-		"GIT_AUTHOR_EMAIL="+authorSig.Email,
-		"GIT_AUTHOR_DATE="+authorDate.Format(time.RFC3339),
-		"GIT_COMMITTER_DATE="+committerDate.Format(time.RFC3339),
-	)
+	treeID, err := git.NewIDFromString(treeHash)
+	if err != nil {
+		return "", err
+	}
 
-	messageBytes := new(bytes.Buffer)
-	_, _ = messageBytes.WriteString(message)
-	_, _ = messageBytes.WriteString("\n")
-
-	args := []string{"commit-tree", treeHash, "-p", "HEAD"}
+	opts := git.CommitTreeOpts{
+		Parents:  []string{"HEAD"},
+		Message:  message,
+		Trailers: make(map[string]string),
+	}
 
 	// Determine if we should sign
 	if git.CheckGitVersionAtLeast("1.7.9") == nil {
 		sign, keyID, signer, _ := t.repo.SignCRUDAction(author, t.basePath, "HEAD")
 		if sign {
-			args = append(args, "-S"+keyID)
+			opts.KeyID = keyID
+			opts.NoGPGSign = false
+			opts.AlwaysSign = true
 			if t.repo.GetTrustModel() == models.CommitterTrustModel || t.repo.GetTrustModel() == models.CollaboratorCommitterTrustModel {
 				if committerSig.Name != authorSig.Name || committerSig.Email != authorSig.Email {
 					// Add trailers
-					_, _ = messageBytes.WriteString("\n")
-					_, _ = messageBytes.WriteString("Co-authored-by: ")
-					_, _ = messageBytes.WriteString(committerSig.String())
-					_, _ = messageBytes.WriteString("\n")
-					_, _ = messageBytes.WriteString("Co-committed-by: ")
-					_, _ = messageBytes.WriteString(committerSig.String())
-					_, _ = messageBytes.WriteString("\n")
+					opts.Trailers["Co-authored-by"] = committerSig.String()
+					opts.Trailers["Co-committed-by"] = committerSig.String()
 				}
 				committerSig = signer
 			}
 		} else if git.CheckGitVersionAtLeast("2.0.0") == nil {
-			args = append(args, "--no-gpg-sign")
+			opts.NoGPGSign = true
 		}
 	}
 
 	if signoff {
 		// Signed-off-by
-		_, _ = messageBytes.WriteString("\n")
-		_, _ = messageBytes.WriteString("Signed-off-by: ")
-		_, _ = messageBytes.WriteString(committerSig.String())
+		opts.Trailers["Signed-off-by"] = committerSig.String()
 	}
 
-	env = append(env,
-		"GIT_COMMITTER_NAME="+committerSig.Name,
-		"GIT_COMMITTER_EMAIL="+committerSig.Email,
-	)
-
-	stdout := new(bytes.Buffer)
-	stderr := new(bytes.Buffer)
-	if err := git.NewCommand(args...).RunInDirTimeoutEnvFullPipeline(env, -1, t.basePath, stdout, stderr, messageBytes); err != nil {
-		log.Error("Unable to commit-tree in temporary repo: %s (%s) Error: %v\nStdout: %s\nStderr: %s",
-			t.repo.FullName(), t.basePath, err, stdout, stderr)
-		return "", fmt.Errorf("Unable to commit-tree in temporary repo: %s Error: %v\nStdout: %s\nStderr: %s",
-			t.repo.FullName(), err, stdout, stderr)
+	commitID, err := t.gitRepo.CommitTree(authorSig, committerSig, treeID, opts)
+	if err != nil {
+		log.Error("Unable to commit-tree in temporary repo: %s (%s) Error: %v",
+			t.repo.FullName(), t.basePath, err)
+		return "", err
 	}
-	return strings.TrimSpace(stdout.String()), nil
+	return commitID.String(), nil
 }
 
 // Push the provided commitHash to the repository branch by the provided user
