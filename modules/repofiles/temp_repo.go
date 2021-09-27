@@ -212,7 +212,7 @@ func (t *TemporaryUploadRepository) CommitTreeWithDate(author, committer *models
 
 	// Determine if we should sign
 	if git.CheckGitVersionAtLeast("1.7.9") == nil {
-		sign, keyID, signer, _ := t.repo.SignCRUDAction(author, t.basePath, "HEAD")
+		sign, keyID, signer, _ := t.repo.SignCRUDAction(author, t.basePath, []string{"HEAD"})
 		if sign {
 			opts.KeyID = keyID
 			opts.NoGPGSign = false

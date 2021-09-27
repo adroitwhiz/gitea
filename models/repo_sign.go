@@ -196,7 +196,7 @@ Loop:
 }
 
 // SignCRUDAction determines if we should sign a CRUD commit to this repository
-func (repo *Repository) SignCRUDAction(u *User, tmpBasePath, parentCommit string) (bool, string, *git.Signature, error) {
+func (repo *Repository) SignCRUDAction(u *User, tmpBasePath string, parentCommits []string) (bool, string, *git.Signature, error) {
 	rules := signingModeFromStrings(setting.Repository.Signing.CRUDActions)
 	signingKey, sig := SigningKey(repo.RepoPath())
 	if signingKey == "" {
@@ -232,16 +232,19 @@ Loop:
 				return false, "", nil, err
 			}
 			defer gitRepo.Close()
-			commit, err := gitRepo.GetCommit(parentCommit)
-			if err != nil {
-				return false, "", nil, err
-			}
-			if commit.Signature == nil {
-				return false, "", nil, &ErrWontSign{parentSigned}
-			}
-			verification := ParseCommitWithSignature(commit)
-			if !verification.Verified {
-				return false, "", nil, &ErrWontSign{parentSigned}
+			// Check that all parent commits are signed
+			for _, parentCommit := range parentCommits {
+				commit, err := gitRepo.GetCommit(parentCommit)
+				if err != nil {
+					return false, "", nil, err
+				}
+				if commit.Signature == nil {
+					return false, "", nil, &ErrWontSign{parentSigned}
+				}
+				verification := ParseCommitWithSignature(commit)
+				if !verification.Verified {
+					return false, "", nil, &ErrWontSign{parentSigned}
+				}
 			}
 		}
 	}
