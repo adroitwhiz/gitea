@@ -233,7 +233,7 @@ func updateWikiPage(doer *models.User, repo *models.Repository, oldWikiName, new
 		commitTreeOpts.Parents = []string{"HEAD"}
 	}
 
-	commitHash, err := gitRepo.CommitTree(doer.NewGitSig(), committer, tree, commitTreeOpts)
+	commitHash, err := gitRepo.CommitTree(doer.NewGitSig(), committer, tree.ID, commitTreeOpts)
 	if err != nil {
 		log.Error("%v", err)
 		return err
@@ -348,7 +348,7 @@ func DeleteWikiPage(doer *models.User, repo *models.Repository, wikiName string)
 		commitTreeOpts.NoGPGSign = true
 	}
 
-	commitHash, err := gitRepo.CommitTree(doer.NewGitSig(), committer, tree, commitTreeOpts)
+	commitHash, err := gitRepo.CommitTree(doer.NewGitSig(), committer, tree.ID, commitTreeOpts)
 	if err != nil {
 		return err
 	}
