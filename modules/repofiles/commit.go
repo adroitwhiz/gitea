@@ -29,7 +29,7 @@ type CommitDateOptions struct {
 
 // CommitTreeOptions represents the non-mandatory options to CommitTree
 type CommitTreeOptions struct {
-	Parents []string
+	Parents *[]string
 	Dates   *CommitDateOptions
 }
 
@@ -47,8 +47,11 @@ func CountDivergingCommits(repo *models.Repository, branch string) (*git.Diverge
 // (for instance, a temporary upload repository has its own temporary Git repository.)
 func CommitTree(repo *models.Repository, gitRepo *git.Repository, author, committer *models.User, treeHash string, message string, signoff bool, opts CommitTreeOptions) (string, *structs.PayloadCommitVerification, error) {
 	// Initialize default parent. Dates will be set in git.CommitTree if not provided here.
-	if len(opts.Parents) == 0 {
-		opts.Parents = append(opts.Parents, "HEAD")
+	var parents []string
+	if opts.Parents == nil {
+		parents = []string{"HEAD"}
+	} else {
+		parents = *opts.Parents
 	}
 
 	authorSig := author.NewGitSig()
@@ -65,7 +68,7 @@ func CommitTree(repo *models.Repository, gitRepo *git.Repository, author, commit
 	}
 
 	gitOpts := git.CommitTreeOpts{
-		Parents:  []string{"HEAD"},
+		Parents:  parents,
 		Message:  message,
 		Trailers: make(map[string]string),
 	}
@@ -77,7 +80,7 @@ func CommitTree(repo *models.Repository, gitRepo *git.Repository, author, commit
 
 	// Determine if we should sign
 	if git.CheckGitVersionAtLeast("1.7.9") == nil {
-		sign, keyID, signer, _ := repo.SignCRUDAction(author, gitRepo.Path, opts.Parents)
+		sign, keyID, signer, _ := repo.SignCRUDAction(author, gitRepo.Path, parents)
 		if sign {
 			gitOpts.KeyID = keyID
 			gitOpts.NoGPGSign = false
