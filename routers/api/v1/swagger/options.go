@@ -132,6 +132,9 @@ type swaggerParameterBodies struct {
 	CommitDateOptions api.CommitDateOptions
 
 	// in:body
+	CreateCommitOptions api.CreateCommitOptions
+
+	// in:body
 	RepoTopicOptions api.RepoTopicOptions
 
 	// in:body

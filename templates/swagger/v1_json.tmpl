@@ -3552,6 +3552,53 @@
         }
       }
     },
+    "/repos/{owner}/{repo}/git/commits": {
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "repository"
+        ],
+        "summary": "Create a new commit object",
+        "operationId": "CreateCommit",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "owner of the repo",
+            "name": "owner",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "name of the repo",
+            "name": "repo",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateCommitOptions"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/CreateCommitResponse"
+          },
+          "400": {
+            "$ref": "#/responses/error"
+          },
+          "403": {
+            "$ref": "#/responses/error"
+          }
+        }
+      }
+    },
     "/repos/{owner}/{repo}/git/commits/{sha}": {
       "get": {
         "produces": [
@@ -12953,6 +13000,67 @@
       },
       "x-go-package": "code.gitea.io/gitea/modules/structs"
     },
+    "CreateCommitOptions": {
+      "description": "CreateCommitOptions API options for creating a commit",
+      "type": "object",
+      "required": [
+        "message",
+        "tree",
+        "parents"
+      ],
+      "properties": {
+        "author": {
+          "$ref": "#/definitions/CommitUser"
+        },
+        "committer": {
+          "$ref": "#/definitions/CommitUser"
+        },
+        "dates": {
+          "$ref": "#/definitions/CommitDateOptions"
+        },
+        "message": {
+          "description": "The commit message",
+          "type": "string",
+          "x-go-name": "Message"
+        },
+        "parents": {
+          "description": "The SHA hashes of this commit's parents.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Parents"
+        },
+        "signoff": {
+          "description": "Add a Signed-off-by trailer by the committer at the end of the commit log message.",
+          "type": "boolean",
+          "x-go-name": "Signoff"
+        },
+        "tree": {
+          "description": "The SHA has of this commit's corresponding Git tree object",
+          "type": "string",
+          "x-go-name": "Tree"
+        }
+      },
+      "x-go-package": "code.gitea.io/gitea/modules/structs"
+    },
+    "CreateCommitResponse": {
+      "type": "object",
+      "properties": {
+        "sha": {
+          "type": "string",
+          "x-go-name": "SHA"
+        },
+        "url": {
+          "type": "string",
+          "x-go-name": "URL"
+        },
+        "verification": {
+          "$ref": "#/definitions/PayloadCommitVerification"
+        }
+      },
+      "x-go-package": "code.gitea.io/gitea/modules/structs"
+    },
     "CreateEmailOption": {
       "description": "CreateEmailOption options when creating email addresses",
       "type": "object",
@@ -17465,6 +17573,15 @@
       "description": "ContentsResponse",
       "schema": {
         "$ref": "#/definitions/ContentsResponse"
+      }
+    },
+    "CreateCommitResponse": {
+      "description": "CreateCommitResponse",
+      "schema": {
+        "$ref": "#/definitions/CreateCommitResponse"
+      },
+      "headers": {
+        "body": {}
       }
     },
     "CronList": {

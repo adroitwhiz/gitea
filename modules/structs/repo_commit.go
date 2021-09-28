@@ -62,3 +62,28 @@ type CommitDateOptions struct {
 type CommitAffectedFiles struct {
 	Filename string `json:"filename"`
 }
+
+// CreateCommitOptions API options for creating a commit
+type CreateCommitOptions struct {
+	// The commit message
+	// required: true
+	Message string `json:"message" binding:"Required"`
+	// The SHA has of this commit's corresponding Git tree object
+	// required: true
+	Tree string `json:"tree" binding:"Required"`
+	// The SHA hashes of this commit's parents.
+	// required: true
+	Parents *[]string `json:"parents" binding:"Required"`
+	// `author` and `committer` are optional (if only one is given, it will be used for the other, otherwise the authenticated user will be used)
+	Author    CommitUser        `json:"author"`
+	Committer CommitUser        `json:"committer"`
+	Dates     CommitDateOptions `json:"dates"`
+	// Add a Signed-off-by trailer by the committer at the end of the commit log message.
+	Signoff bool `json:"signoff"`
+}
+
+type CreateCommitResponse struct {
+	URL          string                     `json:"url"`
+	SHA          string                     `json:"sha"`
+	Verification *PayloadCommitVerification `json:"verification"`
+}

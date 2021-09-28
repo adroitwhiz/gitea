@@ -15,9 +15,11 @@ import (
 	"code.gitea.io/gitea/modules/context"
 	"code.gitea.io/gitea/modules/convert"
 	"code.gitea.io/gitea/modules/git"
+	"code.gitea.io/gitea/modules/repofiles"
 	"code.gitea.io/gitea/modules/setting"
 	api "code.gitea.io/gitea/modules/structs"
 	"code.gitea.io/gitea/modules/validation"
+	"code.gitea.io/gitea/modules/web"
 	"code.gitea.io/gitea/routers/api/v1/utils"
 )
 
@@ -261,5 +263,89 @@ func DownloadCommitDiffOrPatch(ctx *context.APIContext) {
 		}
 		ctx.Error(http.StatusInternalServerError, "DownloadCommitDiffOrPatch", err)
 		return
+	}
+}
+
+// CreateCommit creates a new git commit object
+func CreateCommit(ctx *context.APIContext) {
+	// swagger:operation POST /repos/{owner}/{repo}/git/commits repository CreateCommit
+	// ---
+	// summary: Create a new commit object
+	// produces:
+	// - application/json
+	// parameters:
+	// - name: owner
+	//   in: path
+	//   description: owner of the repo
+	//   type: string
+	//   required: true
+	// - name: repo
+	//   in: path
+	//   description: name of the repo
+	//   type: string
+	//   required: true
+	// - in: body
+	//   name: body
+	//   required: true
+	//   schema:
+	//     "$ref": "#/definitions/CreateCommitOptions"
+	// responses:
+	//   "200":
+	//     "$ref": "#/responses/CreateCommitResponse"
+	//   "400":
+	//     "$ref": "#/responses/error"
+	//   "403":
+	//     "$ref": "#/responses/error"
+
+	// TODO: move this into reqRepoWriter
+	if ctx.Repo.Repository.IsMirror || ctx.Repo.Repository.IsArchived {
+		ctx.Error(http.StatusForbidden, "Repository is archived or a mirror", nil)
+		return
+	}
+
+	gitRepo, err := git.OpenRepository(ctx.Repo.Repository.RepoPath())
+	if err != nil {
+		ctx.Error(http.StatusInternalServerError, "CreateCommit", err)
+	}
+
+	apiOpts := web.GetForm(ctx).(*api.CreateCommitOptions)
+
+	authorOpts := &repofiles.IdentityOptions{
+		Name:  apiOpts.Author.Name,
+		Email: apiOpts.Author.Email,
+	}
+
+	committerOpts := &repofiles.IdentityOptions{
+		Name:  apiOpts.Committer.Name,
+		Email: apiOpts.Committer.Email,
+	}
+
+	dateOpts := &repofiles.CommitDateOptions{
+		Author:    apiOpts.Dates.Author,
+		Committer: apiOpts.Dates.Committer,
+	}
+
+	author, committer := repofiles.GetAuthorAndCommitterUsers(authorOpts, committerOpts, ctx.User)
+
+	// CommitTree allows for any Git ref to be passed as parents. Limit it to SHA hashes.
+	for _, parent := range *apiOpts.Parents {
+		_, err := git.NewIDFromString(parent)
+		if err != nil {
+			ctx.Error(http.StatusBadRequest, fmt.Sprintf("Invalid SHA hash: %s", parent), err)
+			return
+		}
+	}
+
+	if shaString, verification, err := repofiles.CommitTree(ctx.Repo.Repository, gitRepo, author, committer, apiOpts.Tree, apiOpts.Message, apiOpts.Signoff, repofiles.CommitTreeOptions{
+		Parents: apiOpts.Parents,
+		Dates:   dateOpts,
+	}); err != nil {
+		ctx.Error(http.StatusBadRequest, "", err)
+	} else {
+		ctx.JSON(http.StatusCreated, api.CreateCommitResponse{
+			URL:          ctx.Repo.Repository.APIURL() + "/git/commits/" + shaString,
+			SHA:          shaString,
+			Verification: verification,
+		})
 	}
 }

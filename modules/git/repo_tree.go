@@ -56,7 +56,6 @@ func (repo *Repository) CommitTree(author *Signature, committer *Signature, tree
 
 	messageBytes := new(bytes.Buffer)
 	_, _ = messageBytes.WriteString(opts.Message)
-	_, _ = messageBytes.WriteString("\n")
 
 	if len(opts.Trailers) > 0 {
 		_, _ = messageBytes.WriteString("\n")
